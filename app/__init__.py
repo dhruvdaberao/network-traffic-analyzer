@@ -49,6 +49,11 @@ def create_app(config_class=Config):
     app.register_blueprint(main_bp)
     register_socket_events(app)
 
+    if app.config.get("HOSTED_MODE") and app.config.get("AUTO_START_DEMO"):
+        capture_service.start_demo(
+            "Hosted environment detected. Demo mode started automatically."
+        )
+
     return app
 
 

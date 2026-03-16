@@ -68,6 +68,12 @@ class CaptureService:
         return items
 
     def start_live(self, interface_name=None):
+        if self.app.config.get("HOSTED_MODE"):
+            self.logger.info("Hosted mode enabled; skipping live capture and starting demo mode.")
+            return self.start_demo(
+                "Live capture is disabled in hosted mode. Demo mode started automatically."
+            )
+
         with self.lock:
             self._stop_locked(emit=False)
             self.mode = "live"

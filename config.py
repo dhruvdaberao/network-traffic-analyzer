@@ -7,6 +7,8 @@ INSTANCE_DIR = BASE_DIR / "instance"
 
 
 class Config:
+    HOSTED_MODE = os.getenv("HOSTED_MODE", "false").lower() == "true"
+    AUTO_START_DEMO = os.getenv("AUTO_START_DEMO", "true").lower() == "true"
     SECRET_KEY = os.getenv("SECRET_KEY", "change-me-for-production")
     SQLALCHEMY_DATABASE_URI = os.getenv(
         "DATABASE_URL",
