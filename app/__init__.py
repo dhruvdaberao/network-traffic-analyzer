@@ -77,3 +77,6 @@ def _ensure_default_settings():
         if not existing:
             db.session.add(AppSetting(key=key, value=value))
     db.session.commit()
+
+
+app = create_app()
