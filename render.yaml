@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: intelligent-network-traffic-analyzer
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.11
+      - key: HOSTED_MODE
+        value: "true"
+      - key: AUTO_START_DEMO
+        value: "true"
+      - key: SECRET_KEY
+        generateValue: true
