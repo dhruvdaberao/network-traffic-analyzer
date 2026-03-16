@@ -25,13 +25,13 @@
             </select>
 
             <div class="button-row">
-                <button id="start-live-btn" class="action-button">Start Live Capture</button>
-                <button id="start-demo-btn" class="action-button secondary">Start Demo Mode</button>
-                <button id="stop-capture-btn" class="action-button danger">Stop Capture</button>
+                <button type="button" id="start-live-btn" class="action-button">Start Live Capture</button>
+                <button type="button" id="start-demo-btn" class="action-button secondary">Start Demo Mode</button>
+                <button type="button" id="stop-capture-btn" class="action-button danger">Stop Capture</button>
             </div>
 
             <div class="status-panel">
-                <span class="status-chip live" id="settings-status-pill">{{ capture_state.status|default('stopped') }}</span>
+                <span class="status-chip {{ capture_state.status|default('stopped')|lower }}" id="settings-status-pill">{{ capture_state.status|default('stopped') }}</span>
                 <p id="settings-status-message">{{ capture_state.message|default('Capture idle.') }}</p>
             </div>
         </div>
@@ -48,7 +48,7 @@
         <div class="settings-stack">
             <a href="{{ url_for('main.api_export_alerts') }}" class="action-button secondary">Export Alerts CSV</a>
             <a href="{{ url_for('main.api_export_packets') }}" class="action-button secondary">Export Packets CSV</a>
-            <button id="clear-data-btn" class="action-button danger">Clear Stored Data</button>
+            <button type="button" id="clear-data-btn" class="action-button danger">Clear Stored Data</button>
             <p class="muted-copy">Clearing data removes packet logs, alerts, and traffic snapshots from SQLite.</p>
         </div>
     </article>

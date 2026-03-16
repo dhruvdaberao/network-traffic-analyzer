@@ -16,6 +16,18 @@ def _services():
     )
 
 
+def _safe_int(value, default, minimum=None, maximum=None):
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        parsed = default
+    if minimum is not None:
+        parsed = max(parsed, minimum)
+    if maximum is not None:
+        parsed = min(parsed, maximum)
+    return parsed
+
+
 @main_bp.route("/")
 def index():
     return render_template("index.html", active_page="overview")
@@ -78,8 +90,8 @@ def api_top_talkers():
 
 @main_bp.get("/api/packets")
 def api_packets():
-    page = max(int(request.args.get("page", 1)), 1)
-    per_page = min(int(request.args.get("per_page", 25)), 100)
+    page = _safe_int(request.args.get("page", 1), 1, minimum=1)
+    per_page = _safe_int(request.args.get("per_page", 25), 25, minimum=1, maximum=100)
     protocol = request.args.get("protocol", "").strip()
     src_ip = request.args.get("src_ip", "").strip()
     dst_ip = request.args.get("dst_ip", "").strip()
@@ -110,7 +122,7 @@ def api_packets():
             "items": [item.to_dict() for item in pagination.items],
             "pagination": {
                 "page": pagination.page,
-                "pages": pagination.pages,
+                "pages": max(pagination.pages, 1),
                 "per_page": per_page,
                 "total": pagination.total,
                 "has_next": pagination.has_next,
@@ -122,7 +134,7 @@ def api_packets():
 
 @main_bp.get("/api/alerts")
 def api_alerts():
-    limit = min(int(request.args.get("limit", 100)), 200)
+    limit = _safe_int(request.args.get("limit", 100), 100, minimum=1, maximum=200)
     status = request.args.get("status", "").strip()
     query = AlertLog.query.order_by(AlertLog.timestamp.desc())
     if status and status.lower() != "all":

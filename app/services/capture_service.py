@@ -122,6 +122,7 @@ class CaptureService:
             self.status = "running"
             self.message = message or "Demo traffic generator running."
             self.last_error = ""
+            self.local_ips = {"192.168.1.23"}
 
         generator = DemoTrafficGenerator(
             callback=self._handle_demo_packet,
@@ -140,8 +141,12 @@ class CaptureService:
         }
 
     def stop_capture(self):
+        thread_to_join = None
         with self.lock:
+            thread_to_join = self.demo_thread
             self._stop_locked(emit=False)
+        if thread_to_join and thread_to_join.is_alive():
+            thread_to_join.join(timeout=1.0)
         self._emit_status()
         return {
             "success": True,
@@ -158,12 +163,15 @@ class CaptureService:
                 self.logger.exception("Stopping sniffer failed.")
             finally:
                 self.sniffer = None
+        demo_thread = self.demo_thread
         self.demo_thread = None
         self.status = "stopped"
         self.message = "Capture stopped."
         self.last_error = ""
+        self.local_ips = self._collect_local_ips()
         if emit:
             self._emit_status()
+        return demo_thread
 
     def _handle_live_packet(self, packet):
         self._process_packet(packet)

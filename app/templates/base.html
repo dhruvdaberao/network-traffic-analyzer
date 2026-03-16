@@ -13,7 +13,7 @@
     <div class="app-shell">
         <aside class="sidebar">
             <div class="brand-block">
-                <span class="brand-kicker">Placement Project</span>
+                <span class="brand-eyebrow">Network Visibility</span>
                 <h2>Intelligent Network Traffic Analyzer</h2>
                 <p>Real-time packet inspection, alerting, analytics, and demo-safe presentation mode.</p>
             </div>
@@ -27,12 +27,14 @@
             </nav>
 
             <div class="sidebar-status">
-                <div class="status-chip live" id="capture-status-pill">Stopped</div>
+                <div class="status-chip {{ capture_state.status|default('stopped')|lower if capture_state is defined else 'stopped' }}" id="capture-status-pill">
+                    {{ capture_state.status|default('Stopped') if capture_state is defined else 'Stopped' }}
+                </div>
                 <div>
                     <p class="sidebar-label">Interface</p>
-                    <strong id="selected-interface-chip">Not selected</strong>
+                    <strong id="selected-interface-chip">{{ capture_state.interface|default('Not selected') if capture_state is defined else 'Not selected' }}</strong>
                 </div>
-                <p id="capture-status-message" class="muted-copy">Capture idle.</p>
+                <p id="capture-status-message" class="muted-copy">{{ capture_state.message|default('Capture idle.') if capture_state is defined else 'Capture idle.' }}</p>
             </div>
         </aside>
 
@@ -45,7 +47,7 @@
                 <div class="topbar-meta">
                     <div class="meta-card">
                         <span class="meta-label">Capture Mode</span>
-                        <strong id="capture-mode-chip">Idle</strong>
+                        <strong id="capture-mode-chip">{{ capture_state.mode|default('Idle') if capture_state is defined else 'Idle' }}</strong>
                     </div>
                     <div class="meta-card">
                         <span class="meta-label">Last Refresh</span>
@@ -66,8 +68,8 @@
         window.APP_BOOTSTRAP = {
             page: "{{ active_page }}",
             defaultPageSize: {{ default_page_size|default(25) }},
-            initialThresholds: {{ thresholds|tojson if thresholds is defined else '{}' }},
-            initialCaptureState: {{ capture_state|tojson if capture_state is defined else '{}' }}
+            initialThresholds: {{ thresholds|default({}, true)|tojson }},
+            initialCaptureState: {{ capture_state|default({}, true)|tojson }}
         };
     </script>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
