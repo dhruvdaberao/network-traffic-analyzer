@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Live Traffic | Intelligent Network Traffic Analyzer{% endblock %}
+{% block page_title %}Live Traffic Feed{% endblock %}
+
+{% block content %}
+<section class="panel-card controls-panel">
+    <div class="panel-head split">
+        <div>
+            <h3>Live Feed Controls</h3>
+            <p>Filter the scrolling packet stream while the backend keeps capturing and analyzing traffic.</p>
+        </div>
+        <div class="toolbar">
+            <select id="live-protocol-filter" class="control-input slim">
+                <option value="all">All Protocols</option>
+                <option value="HTTP">HTTP</option>
+                <option value="HTTPS/TLS">HTTPS/TLS</option>
+                <option value="DNS">DNS</option>
+                <option value="TCP">TCP</option>
+                <option value="UDP">UDP</option>
+                <option value="ICMP">ICMP</option>
+                <option value="ARP">ARP</option>
+            </select>
+            <button id="toggle-live-feed" class="action-button secondary">Pause Feed</button>
+        </div>
+    </div>
+</section>
+
+<section class="card-grid dual-grid">
+    <article class="panel-card">
+        <div class="panel-head">
+            <div>
+                <h3>Scrolling Live Packet Summaries</h3>
+                <p>Newest summaries appear at the top as packets are parsed and stored.</p>
+            </div>
+        </div>
+        <div id="live-feed" class="live-feed">
+            <div class="feed-empty">Feed is waiting for incoming packets.</div>
+        </div>
+    </article>
+
+    <article class="panel-card">
+        <div class="panel-head">
+            <div>
+                <h3>Session Snapshot</h3>
+                <p>Current counts and alert pressure for the active worker.</p>
+            </div>
+        </div>
+        <div class="mini-metrics">
+            <div class="mini-metric">
+                <span>Packets</span>
+                <strong id="live-total-packets">0</strong>
+            </div>
+            <div class="mini-metric">
+                <span>Bandwidth</span>
+                <strong id="live-bandwidth">0 bps</strong>
+            </div>
+            <div class="mini-metric">
+                <span>Alerts</span>
+                <strong id="live-alert-count">0</strong>
+            </div>
+            <div class="mini-metric">
+                <span>Dominant Protocol</span>
+                <strong id="live-dominant-protocol">N/A</strong>
+            </div>
+        </div>
+    </article>
+</section>
+{% endblock %}

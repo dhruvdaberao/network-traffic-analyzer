@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Overview | Intelligent Network Traffic Analyzer{% endblock %}
+{% block page_title %}Traffic Overview{% endblock %}
+
+{% block content %}
+<section class="card-grid metrics-grid">
+    <article class="metric-card">
+        <span>Total Packets</span>
+        <strong id="metric-total-packets">0</strong>
+        <p>Captured packet summaries processed end to end.</p>
+    </article>
+    <article class="metric-card">
+        <span>Total Bytes</span>
+        <strong id="metric-total-bytes">0 B</strong>
+        <p>Aggregate traffic volume observed by the analyzer.</p>
+    </article>
+    <article class="metric-card">
+        <span>Active Alerts</span>
+        <strong id="metric-active-alerts">0</strong>
+        <p>Rule-based detections currently marked as new.</p>
+    </article>
+    <article class="metric-card">
+        <span>Current Bandwidth</span>
+        <strong id="metric-bandwidth">0 bps</strong>
+        <p>Latest throughput measured from in-memory time buckets.</p>
+    </article>
+    <article class="metric-card">
+        <span>Selected Interface</span>
+        <strong id="metric-interface">Not selected</strong>
+        <p>Current live interface or the demo traffic generator.</p>
+    </article>
+    <article class="metric-card">
+        <span>Capture Status</span>
+        <strong id="metric-status">Stopped</strong>
+        <p>Real-time state of the capture worker and UI feed.</p>
+    </article>
+</section>
+
+<section class="card-grid charts-grid">
+    <article class="panel-card">
+        <div class="panel-head">
+            <div>
+                <h3>Packets Over Time</h3>
+                <p>Rolling packet count trend for the active session.</p>
+            </div>
+        </div>
+        <canvas id="packets-trend-chart"></canvas>
+    </article>
+    <article class="panel-card">
+        <div class="panel-head">
+            <div>
+                <h3>Bandwidth Over Time</h3>
+                <p>Bandwidth usage estimated from the current second buckets.</p>
+            </div>
+        </div>
+        <canvas id="bandwidth-chart"></canvas>
+    </article>
+    <article class="panel-card">
+        <div class="panel-head">
+            <div>
+                <h3>Protocol Distribution</h3>
+                <p>Detected protocols across the running session.</p>
+            </div>
+        </div>
+        <canvas id="protocol-chart"></canvas>
+    </article>
+    <article class="panel-card">
+        <div class="panel-head">
+            <div>
+                <h3>Top Talkers</h3>
+                <p>Highest-volume traffic pairs by observed bytes.</p>
+            </div>
+        </div>
+        <canvas id="talkers-chart"></canvas>
+    </article>
+</section>
+
+<section class="card-grid dual-grid">
+    <article class="panel-card">
+        <div class="panel-head">
+            <div>
+                <h3>Recent Packets</h3>
+                <p>Latest packet summaries written to the database.</p>
+            </div>
+            <a href="{{ url_for('main.packets') }}" class="ghost-link">Open table</a>
+        </div>
+        <div class="table-shell compact-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Protocol</th>
+                        <th>Flow</th>
+                        <th>Summary</th>
+                    </tr>
+                </thead>
+                <tbody id="overview-packets-body">
+                    <tr><td colspan="4" class="empty-state">Waiting for packet data.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </article>
+
+    <article class="panel-card">
+        <div class="panel-head">
+            <div>
+                <h3>Recent Alerts</h3>
+                <p>Newest suspicious traffic detections raised by the engine.</p>
+            </div>
+            <a href="{{ url_for('main.alerts') }}" class="ghost-link">Open alerts</a>
+        </div>
+        <div class="table-shell compact-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Severity</th>
+                        <th>Type</th>
+                        <th>Source</th>
+                        <th>Reason</th>
+                    </tr>
+                </thead>
+                <tbody id="overview-alerts-body">
+                    <tr><td colspan="4" class="empty-state">No alerts yet.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </article>
+</section>
+{% endblock %}

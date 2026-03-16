@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Alerts | Intelligent Network Traffic Analyzer{% endblock %}
+{% block page_title %}Detection Alerts{% endblock %}
+
+{% block content %}
+<section class="panel-card">
+    <div class="panel-head split">
+        <div>
+            <h3>Suspicious Traffic Alerts</h3>
+            <p>Rule-based detections for port scans, burst traffic, repeated DNS activity, and SYN-heavy behavior.</p>
+        </div>
+        <div class="toolbar">
+            <select id="alert-status-filter" class="control-input slim">
+                <option value="all">All Statuses</option>
+                <option value="New">New</option>
+                <option value="Reviewed">Reviewed</option>
+            </select>
+            <a href="{{ url_for('main.api_export_alerts') }}" class="action-button secondary">Export CSV</a>
+        </div>
+    </div>
+
+    <div class="table-shell">
+        <table>
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Severity</th>
+                    <th>Type</th>
+                    <th>Source</th>
+                    <th>Destination</th>
+                    <th>Reason</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="alerts-table-body">
+                <tr><td colspan="8" class="empty-state">No alerts available.</td></tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

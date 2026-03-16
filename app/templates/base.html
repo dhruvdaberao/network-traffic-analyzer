@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Intelligent Network Traffic Analyzer{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body data-page="{{ active_page }}">
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="brand-block">
+                <span class="brand-kicker">Placement Project</span>
+                <h2>Intelligent Network Traffic Analyzer</h2>
+                <p>Real-time packet inspection, alerting, analytics, and demo-safe presentation mode.</p>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('main.index') }}" class="{% if active_page == 'overview' %}active{% endif %}">Overview</a>
+                <a href="{{ url_for('main.live') }}" class="{% if active_page == 'live' %}active{% endif %}">Live Traffic</a>
+                <a href="{{ url_for('main.alerts') }}" class="{% if active_page == 'alerts' %}active{% endif %}">Alerts</a>
+                <a href="{{ url_for('main.packets') }}" class="{% if active_page == 'packets' %}active{% endif %}">Packets</a>
+                <a href="{{ url_for('main.settings') }}" class="{% if active_page == 'settings' %}active{% endif %}">Settings</a>
+            </nav>
+
+            <div class="sidebar-status">
+                <div class="status-chip live" id="capture-status-pill">Stopped</div>
+                <div>
+                    <p class="sidebar-label">Interface</p>
+                    <strong id="selected-interface-chip">Not selected</strong>
+                </div>
+                <p id="capture-status-message" class="muted-copy">Capture idle.</p>
+            </div>
+        </aside>
+
+        <div class="main-shell">
+            <header class="topbar">
+                <div>
+                    <p class="topbar-kicker">Enterprise Monitoring Dashboard</p>
+                    <h1>{% block page_title %}Traffic Overview{% endblock %}</h1>
+                </div>
+                <div class="topbar-meta">
+                    <div class="meta-card">
+                        <span class="meta-label">Capture Mode</span>
+                        <strong id="capture-mode-chip">Idle</strong>
+                    </div>
+                    <div class="meta-card">
+                        <span class="meta-label">Last Refresh</span>
+                        <strong id="last-refresh-chip">Waiting for data</strong>
+                    </div>
+                </div>
+            </header>
+
+            <main class="page-content">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <div id="toast" class="toast hidden"></div>
+
+    <script>
+        window.APP_BOOTSTRAP = {
+            page: "{{ active_page }}",
+            defaultPageSize: {{ default_page_size|default(25) }},
+            initialThresholds: {{ thresholds|tojson if thresholds is defined else '{}' }},
+            initialCaptureState: {{ capture_state|tojson if capture_state is defined else '{}' }}
+        };
+    </script>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>

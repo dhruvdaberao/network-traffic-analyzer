@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Settings | Intelligent Network Traffic Analyzer{% endblock %}
+{% block page_title %}Capture and Detection Settings{% endblock %}
+
+{% block content %}
+<section class="card-grid dual-grid">
+    <article class="panel-card">
+        <div class="panel-head">
+            <div>
+                <h3>Capture Controls</h3>
+                <p>Choose a network interface for live capture or switch to the built-in traffic generator for demos.</p>
+            </div>
+        </div>
+
+        <div class="settings-stack">
+            <label class="field-label" for="interface-select">Network Interface</label>
+            <select id="interface-select" class="control-input">
+                <option value="">Auto-select available interface</option>
+                {% for interface in interfaces %}
+                <option value="{{ interface.name }}" {% if capture_state.interface == interface.name %}selected{% endif %}>
+                    {{ interface.name }}{% if interface.ipv4 %} ({{ interface.ipv4|join(', ') }}){% endif %}
+                </option>
+                {% endfor %}
+            </select>
+
+            <div class="button-row">
+                <button id="start-live-btn" class="action-button">Start Live Capture</button>
+                <button id="start-demo-btn" class="action-button secondary">Start Demo Mode</button>
+                <button id="stop-capture-btn" class="action-button danger">Stop Capture</button>
+            </div>
+
+            <div class="status-panel">
+                <span class="status-chip live" id="settings-status-pill">{{ capture_state.status|default('stopped') }}</span>
+                <p id="settings-status-message">{{ capture_state.message|default('Capture idle.') }}</p>
+            </div>
+        </div>
+    </article>
+
+    <article class="panel-card">
+        <div class="panel-head">
+            <div>
+                <h3>Export and Maintenance</h3>
+                <p>Download alerts and packets for reports, or reset persisted data before a fresh demo.</p>
+            </div>
+        </div>
+
+        <div class="settings-stack">
+            <a href="{{ url_for('main.api_export_alerts') }}" class="action-button secondary">Export Alerts CSV</a>
+            <a href="{{ url_for('main.api_export_packets') }}" class="action-button secondary">Export Packets CSV</a>
+            <button id="clear-data-btn" class="action-button danger">Clear Stored Data</button>
+            <p class="muted-copy">Clearing data removes packet logs, alerts, and traffic snapshots from SQLite.</p>
+        </div>
+    </article>
+</section>
+
+<section class="panel-card">
+    <div class="panel-head">
+        <div>
+            <h3>Detection Thresholds</h3>
+            <p>Tune the in-memory analysis windows used to flag suspicious patterns and traffic bursts.</p>
+        </div>
+    </div>
+
+    <form id="threshold-form" class="threshold-grid">
+        {% for key, value in thresholds.items() %}
+        <label class="threshold-field">
+            <span>{{ key.replace('_', ' ').title() }}</span>
+            <input type="number" min="1" name="{{ key }}" value="{{ value }}" class="control-input">
+        </label>
+        {% endfor %}
+        <div class="threshold-actions">
+            <button type="submit" class="action-button">Save Thresholds</button>
+        </div>
+    </form>
+</section>
+{% endblock %}

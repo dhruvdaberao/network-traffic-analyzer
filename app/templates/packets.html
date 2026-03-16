@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Packets | Intelligent Network Traffic Analyzer{% endblock %}
+{% block page_title %}Packet Log Table{% endblock %}
+
+{% block content %}
+<section class="panel-card">
+    <div class="panel-head">
+        <div>
+            <h3>Packet Search and Filtering</h3>
+            <p>Search recent packet summaries by protocol, source, destination, or free-text summary terms.</p>
+        </div>
+    </div>
+
+    <form id="packet-filter-form" class="filter-form">
+        <select id="packet-protocol-filter" class="control-input">
+            <option value="all">All Protocols</option>
+            <option value="HTTP">HTTP</option>
+            <option value="HTTPS/TLS">HTTPS/TLS</option>
+            <option value="DNS">DNS</option>
+            <option value="TCP">TCP</option>
+            <option value="UDP">UDP</option>
+            <option value="ICMP">ICMP</option>
+            <option value="ARP">ARP</option>
+            <option value="Other">Other</option>
+        </select>
+        <input id="packet-src-filter" class="control-input" type="text" placeholder="Source IP">
+        <input id="packet-dst-filter" class="control-input" type="text" placeholder="Destination IP">
+        <input id="packet-search-filter" class="control-input" type="text" placeholder="Summary / DNS / Host">
+        <button type="submit" class="action-button">Apply Filters</button>
+        <button type="button" id="packet-filter-reset" class="action-button secondary">Reset</button>
+        <a href="{{ url_for('main.api_export_packets') }}" class="action-button secondary">Export CSV</a>
+    </form>
+
+    <div class="table-shell">
+        <table>
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Protocol</th>
+                    <th>Source</th>
+                    <th>Destination</th>
+                    <th>Length</th>
+                    <th>Direction</th>
+                    <th>Summary</th>
+                </tr>
+            </thead>
+            <tbody id="packets-table-body">
+                <tr><td colspan="7" class="empty-state">No packet records available.</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="pagination-bar">
+        <button id="packets-prev-page" class="action-button secondary">Previous</button>
+        <span id="packets-page-label">Page 1</span>
+        <button id="packets-next-page" class="action-button secondary">Next</button>
+    </div>
+</section>
+{% endblock %}
