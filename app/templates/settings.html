@@ -4,25 +4,35 @@
 {% block page_title %}Capture and Detection Settings{% endblock %}
 
 {% block content %}
-<section class="card-grid dual-grid">
+<section class="card-grid dual-grid settings-grid">
     <article class="panel-card">
         <div class="panel-head">
             <div>
                 <h3>Capture Controls</h3>
-                <p>Choose a network interface for live capture or switch to the built-in traffic generator for demos.</p>
+                <p>Use live capture on a local machine with packet capture support, or switch to demo mode when you need reliable hosted behavior.</p>
             </div>
         </div>
 
         <div class="settings-stack">
+            <div class="info-callout info-callout-accent">
+                <strong>Demo mode</strong>
+                <p>Generates realistic traffic scenarios and exercises parsing, persistence, alerts, charts, and exports without requiring packet-sniffing privileges.</p>
+            </div>
+            <div class="info-callout {% if environment.hosted_mode or environment.running_in_container %}info-callout-warning{% else %}info-callout-neutral{% endif %}">
+                <strong>Live capture requirements</strong>
+                <p>Needs a supported interface, sufficient permissions, Scapy, and on Windows typically Npcap. Hosted platforms usually cannot capture your local workstation traffic.</p>
+            </div>
+
             <label class="field-label" for="interface-select">Network Interface</label>
             <select id="interface-select" class="control-input">
-                <option value="">Auto-select available interface</option>
+                <option value="">Auto-select best available interface</option>
                 {% for interface in interfaces %}
                 <option value="{{ interface.name }}" {% if capture_state.interface == interface.name %}selected{% endif %}>
-                    {{ interface.name }}{% if interface.ipv4 %} ({{ interface.ipv4|join(', ') }}){% endif %}
+                    {{ interface.name }}{% if interface.ipv4 %} ({{ interface.ipv4|join(', ') }}){% endif %}{% if not interface.usable %} — limited{% endif %}
                 </option>
                 {% endfor %}
             </select>
+            <p class="muted-copy">If live capture fails, the dashboard now reports the exact reason instead of silently switching modes.</p>
 
             <div class="button-row">
                 <button type="button" id="start-live-btn" class="action-button">Start Live Capture</button>
@@ -30,13 +40,50 @@
                 <button type="button" id="stop-capture-btn" class="action-button danger">Stop Capture</button>
             </div>
 
-            <div class="status-panel">
-                <span class="status-chip {{ capture_state.status|default('stopped')|lower }}" id="settings-status-pill">{{ capture_state.status|default('stopped') }}</span>
+            <div class="status-panel capture-status-panel">
+                <div class="status-panel-head">
+                    <span class="status-chip {{ capture_state.status|default('stopped')|lower }}" id="settings-status-pill">{{ capture_state.status|default('stopped') }}</span>
+                    <span class="mode-badge" id="settings-mode-badge">{{ capture_state.mode|default('idle')|title }}</span>
+                </div>
                 <p id="settings-status-message">{{ capture_state.message|default('Capture idle.') }}</p>
+                <p id="settings-status-error" class="status-note error {% if not capture_state.error %}hidden{% endif %}">{{ capture_state.error|default('') }}</p>
             </div>
         </div>
     </article>
 
+    <article class="panel-card">
+        <div class="panel-head">
+            <div>
+                <h3>Environment Readiness</h3>
+                <p>Use this panel to understand whether live capture is realistic in the current runtime.</p>
+            </div>
+        </div>
+
+        <div class="settings-stack">
+            <div class="readiness-grid">
+                <div class="mini-metric"><span>Platform</span><strong id="env-platform">{{ environment.platform }}</strong></div>
+                <div class="mini-metric"><span>Scapy</span><strong id="env-scapy">{{ 'Ready' if environment.scapy_available else 'Unavailable' }}</strong></div>
+                <div class="mini-metric"><span>Hosted Mode</span><strong id="env-hosted">{{ 'Yes' if environment.hosted_mode else 'No' }}</strong></div>
+                <div class="mini-metric"><span>Container</span><strong id="env-container">{{ 'Yes' if environment.running_in_container else 'No' }}</strong></div>
+            </div>
+            <div class="info-callout info-callout-neutral">
+                <strong>Current recommendation</strong>
+                <p id="environment-recommendation">{% if environment.hosted_mode %}Demo mode is recommended because hosted mode disables live capture.{% elif environment.running_in_container %}Demo mode is recommended unless this container has privileged access to a meaningful network interface.{% else %}Live capture can be attempted locally if permissions and drivers are in place.{% endif %}</p>
+            </div>
+            <ul class="warning-list" id="environment-warning-list">
+                {% if environment.warnings %}
+                    {% for warning in environment.warnings %}
+                    <li>{{ warning }}</li>
+                    {% endfor %}
+                {% else %}
+                    <li>No major environment blockers were detected. Live capture can still fail if the chosen interface or permissions are incorrect.</li>
+                {% endif %}
+            </ul>
+        </div>
+    </article>
+</section>
+
+<section class="card-grid dual-grid settings-grid">
     <article class="panel-card">
         <div class="panel-head">
             <div>
@@ -52,26 +99,26 @@
             <p class="muted-copy">Clearing data removes packet logs, alerts, and traffic snapshots from SQLite.</p>
         </div>
     </article>
-</section>
 
-<section class="panel-card">
-    <div class="panel-head">
-        <div>
-            <h3>Detection Thresholds</h3>
-            <p>Tune the in-memory analysis windows used to flag suspicious patterns and traffic bursts.</p>
+    <article class="panel-card">
+        <div class="panel-head">
+            <div>
+                <h3>Detection Thresholds</h3>
+                <p>Tune the in-memory analysis windows used to flag suspicious patterns and traffic bursts.</p>
+            </div>
         </div>
-    </div>
 
-    <form id="threshold-form" class="threshold-grid">
-        {% for key, value in thresholds.items() %}
-        <label class="threshold-field">
-            <span>{{ key.replace('_', ' ').title() }}</span>
-            <input type="number" min="1" name="{{ key }}" value="{{ value }}" class="control-input">
-        </label>
-        {% endfor %}
-        <div class="threshold-actions">
-            <button type="submit" class="action-button">Save Thresholds</button>
-        </div>
-    </form>
+        <form id="threshold-form" class="threshold-grid">
+            {% for key, value in thresholds.items() %}
+            <label class="threshold-field">
+                <span>{{ key.replace('_', ' ').title() }}</span>
+                <input type="number" min="1" name="{{ key }}" value="{{ value }}" class="control-input">
+            </label>
+            {% endfor %}
+            <div class="threshold-actions">
+                <button type="submit" class="action-button">Save Thresholds</button>
+            </div>
+        </form>
+    </article>
 </section>
 {% endblock %}

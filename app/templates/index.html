@@ -4,6 +4,18 @@
 {% block page_title %}Traffic Overview{% endblock %}
 
 {% block content %}
+<section class="hero-card">
+    <div>
+        <span class="status-chip neutral">Capture guidance</span>
+        <h2>Choose the right mode for the environment you are in.</h2>
+        <p>Live capture works best on a local machine with packet capture permissions and supported drivers. Demo mode exercises the same analytics, storage, alerting, and dashboard pipeline when live sniffing is unavailable or impractical.</p>
+    </div>
+    <div class="hero-actions">
+        <a href="{{ url_for('main.settings') }}" class="action-button">Open Capture Settings</a>
+        <a href="{{ url_for('main.live') }}" class="action-button secondary">Open Live Feed</a>
+    </div>
+</section>
+
 <section class="card-grid metrics-grid">
     <article class="metric-card">
         <span>Total Packets</span>

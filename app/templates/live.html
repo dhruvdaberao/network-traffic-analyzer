@@ -4,6 +4,16 @@
 {% block page_title %}Live Traffic Feed{% endblock %}
 
 {% block content %}
+<section class="panel-card status-banner">
+    <div>
+        <h3>Live mode vs demo mode</h3>
+        <p>Live mode reads packets from a local interface and may require elevated permissions, Npcap on Windows, and a supported local environment. Demo mode is recommended for hosted deployments and portfolio demos because it drives the same downstream analytics pipeline.</p>
+    </div>
+    <div class="status-banner-actions">
+        <a href="{{ url_for('main.settings') }}" class="action-button">Manage Capture</a>
+    </div>
+</section>
+
 <section class="panel-card controls-panel">
     <div class="panel-head split">
         <div>
