@@ -61,6 +61,7 @@ def settings():
         capture_state=capture_service.get_status(),
         interfaces=capture_service.get_interfaces(),
         thresholds=detection_engine.get_thresholds(),
+        environment=capture_service.inspect_environment(),
     )
 
 
@@ -162,7 +163,8 @@ def api_capture_start():
     capture_service, _, _ = _services()
     payload = request.get_json(silent=True) or {}
     result = capture_service.start_live(payload.get("interface"))
-    return jsonify(result)
+    status_code = 200 if result.get("success") else 400
+    return jsonify(result), status_code
 
 
 @main_bp.post("/api/capture/demo-start")
@@ -196,6 +198,7 @@ def api_settings_current():
             "capture_state": capture_service.get_status(),
             "thresholds": detection_engine.get_thresholds(),
             "interfaces": capture_service.get_interfaces(),
+            "environment": capture_service.inspect_environment(),
         }
     )
 

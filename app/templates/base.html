@@ -10,12 +10,20 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body data-page="{{ active_page }}">
+    <div class="mobile-topbar">
+        <button type="button" class="nav-toggle" id="nav-toggle" aria-controls="sidebar" aria-expanded="false">Menu</button>
+        <div>
+            <p class="topbar-kicker">Enterprise Monitoring Dashboard</p>
+            <strong>Traffic Analyzer</strong>
+        </div>
+    </div>
+
     <div class="app-shell">
-        <aside class="sidebar">
+        <aside class="sidebar" id="sidebar">
             <div class="brand-block">
                 <span class="brand-eyebrow">Network Visibility</span>
                 <h2>Intelligent Network Traffic Analyzer</h2>
-                <p>Real-time packet inspection, alerting, analytics, and demo-safe presentation mode.</p>
+                <p>Real-time packet inspection, alerting, analytics, and a demo-safe presentation mode for constrained environments.</p>
             </div>
 
             <nav class="sidebar-nav">
@@ -34,7 +42,12 @@
                     <p class="sidebar-label">Interface</p>
                     <strong id="selected-interface-chip">{{ capture_state.interface|default('Not selected') if capture_state is defined else 'Not selected' }}</strong>
                 </div>
+                <div>
+                    <p class="sidebar-label">Mode</p>
+                    <strong id="capture-mode-sidebar">{{ capture_state.mode|default('Idle') if capture_state is defined else 'Idle' }}</strong>
+                </div>
                 <p id="capture-status-message" class="muted-copy">{{ capture_state.message|default('Capture idle.') if capture_state is defined else 'Capture idle.' }}</p>
+                <p id="capture-status-error" class="status-note error {% if not (capture_state.error if capture_state is defined else '') %}hidden{% endif %}">{{ capture_state.error if capture_state is defined else '' }}</p>
             </div>
         </aside>
 
@@ -69,7 +82,8 @@
             page: "{{ active_page }}",
             defaultPageSize: {{ default_page_size|default(25) }},
             initialThresholds: {{ thresholds|default({}, true)|tojson }},
-            initialCaptureState: {{ capture_state|default({}, true)|tojson }}
+            initialCaptureState: {{ capture_state|default({}, true)|tojson }},
+            environment: {{ environment|default({}, true)|tojson }}
         };
     </script>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>

@@ -7,27 +7,30 @@ const state = {
     packetPage: 1,
     packetPages: 1,
     packetFilters: {},
+    socket: null,
 };
 
 document.addEventListener("DOMContentLoaded", () => {
     bindCommonHandlers();
     initializePage();
     initializeSocket();
+    updateCaptureStatus(APP.initialCaptureState || {});
+    hydrateEnvironment(APP.environment || {});
 });
 
 function initializePage() {
-    refreshOverview();
+    refreshOverview().catch(handleRequestError);
 
     if (page === "overview") {
-        loadOverviewPage();
+        loadOverviewPage().catch(handleRequestError);
     } else if (page === "live") {
-        loadLivePage();
+        loadLivePage().catch(handleRequestError);
     } else if (page === "alerts") {
-        loadAlertsPage();
+        loadAlertsPage().catch(handleRequestError);
     } else if (page === "packets") {
-        loadPacketsPage();
+        loadPacketsPage().catch(handleRequestError);
     } else if (page === "settings") {
-        loadSettingsPage();
+        loadSettingsPage().catch(handleRequestError);
     }
 }
 
@@ -38,6 +41,15 @@ function initializeSocket() {
     }
 
     const socket = window.io();
+    state.socket = socket;
+
+    socket.on("connect", () => {
+        showToast("Real-time connection established.");
+    });
+
+    socket.on("connect_error", () => {
+        showToast("Real-time connection failed. Dashboard will continue using API refreshes.");
+    });
 
     socket.on("capture_status", (payload) => {
         updateCaptureStatus(payload);
@@ -93,6 +105,15 @@ function bindCommonHandlers() {
             );
         });
     }
+
+    const navToggle = document.getElementById("nav-toggle");
+    const sidebar = document.getElementById("sidebar");
+    if (navToggle && sidebar) {
+        navToggle.addEventListener("click", () => {
+            const isOpen = sidebar.classList.toggle("is-open");
+            navToggle.setAttribute("aria-expanded", String(isOpen));
+        });
+    }
 }
 
 async function loadOverviewPage() {
@@ -125,7 +146,7 @@ async function loadAlertsPage() {
     const filter = document.getElementById("alert-status-filter");
     if (filter && !filter.dataset.bound) {
         filter.dataset.bound = "true";
-        filter.addEventListener("change", () => loadAlertsPage());
+        filter.addEventListener("change", () => loadAlertsPage().catch(handleRequestError));
     }
     const status = filter ? filter.value : "all";
     const data = await fetchJson(`/api/alerts?status=${encodeURIComponent(status)}`);
@@ -144,7 +165,7 @@ async function loadPacketsPage() {
             event.preventDefault();
             state.packetPage = 1;
             state.packetFilters = readPacketFilters();
-            fetchPacketTable();
+            fetchPacketTable().catch(handleRequestError);
         });
     }
 
@@ -157,7 +178,7 @@ async function loadPacketsPage() {
             document.getElementById("packet-search-filter").value = "";
             state.packetFilters = {};
             state.packetPage = 1;
-            fetchPacketTable();
+            fetchPacketTable().catch(handleRequestError);
         });
     }
 
@@ -166,7 +187,7 @@ async function loadPacketsPage() {
         prev.addEventListener("click", () => {
             if (state.packetPage > 1) {
                 state.packetPage -= 1;
-                fetchPacketTable();
+                fetchPacketTable().catch(handleRequestError);
             }
         });
     }
@@ -176,7 +197,7 @@ async function loadPacketsPage() {
         next.addEventListener("click", () => {
             if (state.packetPage < state.packetPages) {
                 state.packetPage += 1;
-                fetchPacketTable();
+                fetchPacketTable().catch(handleRequestError);
             }
         });
     }
@@ -196,27 +217,49 @@ async function loadSettingsPage() {
         startLive.dataset.bound = "true";
         startLive.addEventListener("click", async () => {
             const iface = document.getElementById("interface-select").value;
-            const response = await postJson("/api/capture/start", { interface: iface });
-            updateCaptureStatus(response.status || response);
-            showToast(response.message || "Live capture started.");
+            setActionButtonsDisabled(true);
+            try {
+                const response = await postJson("/api/capture/start", { interface: iface });
+                updateCaptureStatus(response.status || response);
+                showToast(response.message || "Live capture started.");
+            } catch (error) {
+                if (error.payload) {
+                    updateCaptureStatus(error.payload.status || {});
+                    showToast(error.payload.message || "Live capture failed.");
+                } else {
+                    showToast("Live capture request failed.");
+                }
+            } finally {
+                setActionButtonsDisabled(false);
+            }
         });
     }
 
     if (startDemo && !startDemo.dataset.bound) {
         startDemo.dataset.bound = "true";
         startDemo.addEventListener("click", async () => {
-            const response = await postJson("/api/capture/demo-start", {});
-            updateCaptureStatus(response.status || response);
-            showToast(response.message || "Demo mode started.");
+            setActionButtonsDisabled(true);
+            try {
+                const response = await postJson("/api/capture/demo-start", {});
+                updateCaptureStatus(response.status || response);
+                showToast(response.message || "Demo mode started.");
+            } finally {
+                setActionButtonsDisabled(false);
+            }
         });
     }
 
     if (stopCapture && !stopCapture.dataset.bound) {
         stopCapture.dataset.bound = "true";
         stopCapture.addEventListener("click", async () => {
-            const response = await postJson("/api/capture/stop", {});
-            updateCaptureStatus(response.status || response);
-            showToast(response.message || "Capture stopped.");
+            setActionButtonsDisabled(true);
+            try {
+                const response = await postJson("/api/capture/stop", {});
+                updateCaptureStatus(response.status || response);
+                showToast(response.message || "Capture stopped.");
+            } finally {
+                setActionButtonsDisabled(false);
+            }
         });
     }
 
@@ -225,7 +268,10 @@ async function loadSettingsPage() {
         clearData.addEventListener("click", async () => {
             const response = await postJson("/api/settings/clear-data", {});
             showToast(response.message || "Stored data cleared.");
-            refreshOverview();
+            refreshOverview().catch(handleRequestError);
+            if (page === "packets") {
+                fetchPacketTable().catch(handleRequestError);
+            }
         });
     }
 
@@ -283,6 +329,7 @@ function updateOverviewMetrics(payload = {}) {
     setText("metric-interface", payload.selected_interface || "Not selected");
     setText("metric-status", titleCase(payload.capture_status || "stopped"));
     setText("capture-mode-chip", titleCase(payload.capture_mode || "idle"));
+    setText("capture-mode-sidebar", titleCase(payload.capture_mode || "idle"));
     setText("selected-interface-chip", payload.selected_interface || "Not selected");
 }
 
@@ -296,15 +343,55 @@ function updateLiveMetrics(payload = {}) {
 function updateCaptureStatus(payload = {}) {
     const status = (payload.status || "stopped").toLowerCase();
     const mode = titleCase(payload.mode || "idle");
+    const message = payload.message || "Capture idle.";
+    const errorText = payload.error || "";
 
     applyStatusChip("capture-status-pill", status, titleCase(status));
     applyStatusChip("settings-status-pill", status, titleCase(status));
-    setText("capture-status-message", payload.message || "Capture idle.");
-    setText("settings-status-message", payload.message || "Capture idle.");
+    setText("capture-status-message", message);
+    setText("settings-status-message", message);
     setText("selected-interface-chip", payload.interface || "Not selected");
     setText("metric-interface", payload.interface || "Not selected");
     setText("metric-status", titleCase(status));
     setText("capture-mode-chip", mode);
+    setText("capture-mode-sidebar", mode);
+    setText("settings-mode-badge", mode);
+    toggleNote("capture-status-error", errorText);
+    toggleNote("settings-status-error", errorText);
+    hydrateEnvironment(payload.environment || APP.environment || {});
+}
+
+function hydrateEnvironment(environment = {}) {
+    setText("env-platform", environment.platform || "Unknown");
+    setText("env-scapy", environment.scapy_available ? "Ready" : "Unavailable");
+    setText("env-hosted", environment.hosted_mode ? "Yes" : "No");
+    setText("env-container", environment.running_in_container ? "Yes" : "No");
+
+    const recommendation = document.getElementById("environment-recommendation");
+    if (recommendation) {
+        recommendation.textContent = buildEnvironmentRecommendation(environment);
+    }
+
+    const warningList = document.getElementById("environment-warning-list");
+    if (warningList) {
+        const warnings = environment.warnings?.length
+            ? environment.warnings
+            : ["No major environment blockers were detected. Live capture can still fail if the chosen interface or permissions are incorrect."];
+        warningList.innerHTML = warnings.map((warning) => `<li>${escapeHtml(warning)}</li>`).join("");
+    }
+}
+
+function buildEnvironmentRecommendation(environment = {}) {
+    if (environment.hosted_mode) {
+        return "Demo mode is recommended because hosted mode disables live capture.";
+    }
+    if (environment.running_in_container) {
+        return "Demo mode is recommended unless this container has privileged access to a meaningful network interface.";
+    }
+    if (!environment.scapy_available) {
+        return "Install Scapy and packet-capture dependencies before attempting live capture.";
+    }
+    return "Live capture can be attempted locally if permissions and drivers are in place.";
 }
 
 function renderOverviewCharts(protocolItems, bandwidthData, talkerData) {
@@ -460,7 +547,7 @@ function bindReviewButtons() {
             button.disabled = true;
             button.textContent = "Reviewed";
             showToast(`Alert ${response.item.id} marked as reviewed.`);
-            loadAlertsPage();
+            loadAlertsPage().catch(handleRequestError);
         };
     });
 }
@@ -593,8 +680,10 @@ function createOrUpdateChart(existingChart, canvasId, type, data) {
 async function fetchJson(url) {
     const response = await fetch(url);
     if (!response.ok) {
-        showToast(`Request failed: ${url}`);
-        throw new Error(`Request failed: ${url}`);
+        const payload = await parseJsonSafely(response);
+        const error = new Error(payload?.message || `Request failed: ${url}`);
+        error.payload = payload;
+        throw error;
     }
     return response.json();
 }
@@ -606,15 +695,32 @@ async function postJson(url, payload) {
         body: JSON.stringify(payload),
     });
     if (!response.ok) {
-        showToast(`Request failed: ${url}`);
-        throw new Error(`Request failed: ${url}`);
+        const data = await parseJsonSafely(response);
+        const error = new Error(data?.message || `Request failed: ${url}`);
+        error.payload = data;
+        throw error;
     }
     return response.json();
+}
+
+async function parseJsonSafely(response) {
+    try {
+        return await response.json();
+    } catch (_error) {
+        return null;
+    }
 }
 
 function setText(id, value) {
     const element = document.getElementById(id);
     if (element) element.textContent = value;
+}
+
+function toggleNote(id, text) {
+    const element = document.getElementById(id);
+    if (!element) return;
+    element.textContent = text;
+    element.classList.toggle("hidden", !text);
 }
 
 function removeEmptyState(node) {
@@ -632,6 +738,13 @@ function trimChildren(node, maxChildren) {
     while (node.children.length > maxChildren) {
         node.removeChild(node.lastElementChild);
     }
+}
+
+function setActionButtonsDisabled(disabled) {
+    ["start-live-btn", "start-demo-btn", "stop-capture-btn"].forEach((id) => {
+        const element = document.getElementById(id);
+        if (element) element.disabled = disabled;
+    });
 }
 
 function showToast(message) {
@@ -698,4 +811,8 @@ function escapeHtml(value) {
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
+}
+
+function handleRequestError(error) {
+    showToast(error?.message || "Request failed.");
 }
